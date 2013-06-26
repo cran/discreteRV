@@ -21,10 +21,24 @@
 #' 
 #' # Make a loaded die, specifying odds 1:1:1:1:2:4 rather than probabilities:
 #' X.loaded.die <- make.RV(1:6, c(1,1,1,1,2,4))
-make.RV <- function(vals, probs.or.odds) { 
-  names(vals) <- probs.or.odds
-  class(vals) <- "RV"
-  vals 
+make.RV <- function(vals, probs.or.odds) {
+    ## Check if odds or probs
+    pr <- sapply(probs.or.odds, function(pstr) eval(parse(text=pstr)));
+    
+    probsSum <- sum(pr)
+    isOdds <- probsSum > 1
+    
+    if (length(vals) < length(probs.or.odds)) {
+        stop("More probabilities/odds than outcomes provided")
+    } else if (length(vals) > length(probs.or.odds)) {
+        warning("Some outcomes have no probabilities or odds specified: Defaulting to uniform")
+        
+        probs.or.odds <- c(probs.or.odds, rep(ifelse(isOdds, 1, (1 - probsSum) / (length(vals) - length(probs.or.odds))), length(vals) - length(probs.or.odds)))
+    }
+    
+    names(vals) <- probs.or.odds
+    class(vals) <- "RV"
+    vals 
 } 
 
 
@@ -48,58 +62,62 @@ make.RV <- function(vals, probs.or.odds) {
 #' X.loaded.die <- make.RV(1:6, c(1,1,1,1,2,4))
 #' probs(X.loaded.die)
 probs <- function(X, scipen=10, digits=22) { 
-  pr <- sapply(names(X), function(pstr) eval(parse(text=pstr)));
-  options(scipen=scipen)
-  names(pr) <- X
-  pr <- pmax(pr,0)
-  if(any(is.na(pr))) pr[is.na(pr)] <- pmax(0, (1-sum(pr[!is.na(pr)]))/sum(is.na(pr)))
-  pr/sum(pr) 
+    pr <- sapply(names(X), function(pstr) eval(parse(text=pstr)));
+    options(scipen=scipen)
+    names(pr) <- X
+    pr <- pmax(pr,0)
+    if(any(is.na(pr))) pr[is.na(pr)] <- pmax(0, (1-sum(pr[!is.na(pr)]))/sum(is.na(pr)))
+    pr/sum(pr) 
 }
 
 
 #' Joint probability mass function of random variables X and Y
 #'
+#' @author Heike Hofmann \email{hofmann@@iastate.edu}
 #' @param X random variable
 #' @param Y random variable
-#' @param digits number of digits of precision used in the calculation. By defualt set to 15. 
+#' @param digits number of digits of precision used in the calculation. By default set to 15. 
 #' @param scipen A penalty to be applied when deciding to print numeric values in fixed or exponential notation. Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than scipen digits wider
+#' @param sep separator between items from marginal distributions, by default set to "."
 #' @export
 #' @examples
 #' d <- make.RV(c("A","B","C"), c(3,5,11))
 #' d2 <- mult(d,d)
 #' probs(d2)
-mult <- function(X, Y, digits=15, scipen=10) {
-  S <- X
-  tmp <- tapply(outer(probs(S), probs(Y), FUN="*"),
-                outer(S, Y, FUN="paste", sep=""), paste, sep="")
-  S <- as.character(names(tmp))
-  names(S) <- as.numeric(tmp)
-  class(S) <- "RV"
-  return(S)
+mult <- function(X, Y, digits=15, scipen=10, sep=".") {
+    S <- X
+    tmp <- tapply(outer(probs(S), probs(Y), FUN="*"),
+                  outer(S, Y, FUN="paste", sep=sep), paste, sep=sep)
+    S <- as.character(names(tmp))
+    names(S) <- as.numeric(tmp)
+    class(S) <- "RV"
+    return(S)
 }
 
 #' Probability mass function of  X^n
 #'
+#' @author Heike Hofmann \email{hofmann@@iastate.edu}
 #' @param X random variable
 #' @param n power
-#' @param digits number of digits of precision used in the calculation. By defualt set to 15. 
+#' @param digits number of digits of precision used in the calculation. By default set to 15. 
 #' @param scipen A penalty to be applied when deciding to print numeric values in fixed or exponential notation. Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than scipen digits wider
+#' @param sep separator between items from marginal distributions, by default set to "."
 #' @export
 #' @examples
 #' d <- make.RV(c("A","B","C"), c(3,5,11))
 #' d2 <- multN(d)
 #' probs(d2)
-multN <- function(X, n=2, digits=30, scipen=20) {
-  S <- X;  i <- 2
-  while(i<=n) {
-    tmp <- tapply(outer(probs(S), probs(X), FUN="*"),
-                  outer(S, X, FUN="paste", sep=""), paste, sep="")
-    S <- as.character(names(tmp))
-    names(S) <- as.numeric(tmp)
-    i <- i+1
-  }
-  class(S) <- "RV"
-  return(S)
+multN <- function(X, n=2, digits=30, scipen=20, sep=".") {
+    S <- X;  i <- 2
+    while(i<=n) {
+        tmp <- tapply(outer(probs(S), probs(X), FUN="*"),
+                      outer(S, X, FUN="paste", sep=sep), paste, sep=sep)
+        S <- as.character(names(tmp))
+        names(S) <- as.numeric(tmp)
+        i <- i+1
+    }
+    class(S) <- "RV"
+    return(S)
 }
 
 #' Turn a probability vector with possible outcome values in the 'names()' attribute
@@ -210,23 +228,27 @@ SofI <- function(..., digits=15, scipen=10) {
 #' @param n The number of Xs to sum
 #' @param digits number of digits of precision used in the calculation. By defualt set to 15. 
 #' @param scipen A penalty to be applied when deciding to print numeric values in fixed or exponential notation. Positive values bias towards fixed and negative towards scientific notation: fixed notation will be preferred unless it is more than scipen digits wider
+#' @param progress If TRUE, display a progress bar
 #' @export
 #' @examples
 #' X.Bern <- make.RV(c(1,0), c(.5,.5))
 #' 
 #' S5 <- SofIID(X.Bern, 5)
 #' S128 <- SofIID(X.Bern, 128)
-SofIID <- function(X, n=2, digits=15, scipen=10) {
+SofIID <- function(X, n=2, digits=15, scipen=10, progress=TRUE) {
     S <- X;  i <- 2
+    pb <- txtProgressBar(min = 1, max = n)
     while(i<=n) {
         tmp <- tapply(outer(probs(S), probs(X), FUN="*"),
                       outer(S,        X,        FUN="+"), sum)
         S <- as.numeric(names(tmp))  
         options(digits=digits, scipen=scipen) 
         names(S) <- format(tmp)
-        if(i%%100==0) cat(i,"... ")
+        if(i%%100==0 & progress) setTxtProgressBar(pb, i)
         i <- i+1
-    };   cat("\n")
+    };
+    close(pb)
+    
     class(S) <- "RV"
     return(S)
 }
@@ -267,6 +289,7 @@ plot.RV <- function(x, ..., pch=16, cex=1.2, lwd=2, col="black",
 #' Print a random variable of class "RV"
 #' 
 #' @method print RV
+#' @author Eric Hare \email{erichare@@iastate.edu}
 #' @param x A random variable
 #' @param ... Additional arguments to be passed to the "print" function
 #' @export
@@ -275,7 +298,16 @@ plot.RV <- function(x, ..., pch=16, cex=1.2, lwd=2, col="black",
 #' print(fair.die)
 print.RV <- function(x, ...) {
     attributes(x)$class <- NULL
-    print(x, ...)
+    cat(paste("random variable with", length(x), "outcomes\n\n"))
+    
+    ## Use a dataframe... nah.
+    #df <- data.frame(Outcome = x, Probability = names(x))
+    #print(df, row.names = FALSE, ...)
+    
+    vec <- names(x)
+    names(vec) <- x
+    
+    print(vec, quote = FALSE, ...)
 }
 
 #' Normal quantile plot for RVs to answer the question how close to normal it is
@@ -301,4 +333,26 @@ qqnorm.RV <- function(y, ..., pch=16, cex=.5, add=FALSE,
     } else {
         points(qnorm(pc), y, pch=pch, cex=cex, ...)
     }
+}
+
+#' Marginal distribution of a joint random variable
+#'
+#' Extracts the marginal probability mass functions from a joint distribution.
+#' @author Heike Hofmann \email{hofmann@@iastate.edu}
+#' @param X a random variable
+#' @param sep parameter specifying the separator between dimensions, defaults to "."
+#' @export
+#' @examples
+#' X <- make.RV(1:6, 1:6)
+#' X3 <- multN(X, 3)
+#' margins(X3)
+margins <- function(X, sep=".") {
+    dframe <- sapply(strsplit(as.character(X), split=sep, fixed=TRUE), function(x) as.matrix(x))
+    
+    require(plyr)
+    res <- alply(dframe, .margins=1, function(x) {
+        dtab <- xtabs(probs(X)~x)
+        make.RV(names(dtab), as.numeric(dtab))
+    })    
+    res
 }
