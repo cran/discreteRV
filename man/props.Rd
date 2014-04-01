@@ -2,21 +2,21 @@
 \alias{props}
 \title{Proportions of observed outcomes in one or more vectors of simulated trials}
 \usage{
-  props(...)
+props(...)
 }
 \arguments{
   \item{...}{Simulation data produced with the 'rsim()'
   function}
 }
 \description{
-  Proportions of observed outcomes in one or more vectors
-  of simulated trials
+Proportions of observed outcomes in one or more vectors of
+simulated trials
 }
 \examples{
 X.Bern <- make.RV(c(1,0), c(.5,.5))
 X.Bern.sim100 <- rsim(100, X.Bern)
 
-X.loaded.die <- make.RV(1:6, c(1,1,1,1,2,4))
+X.loaded.die <- make.RV(1:6, odds = c(1,1,1,1,2,4))
 X.loaded.die.sim100 <- rsim(100, X.loaded.die)
 props(X.Bern.sim100)
 props(X.loaded.die.sim100)

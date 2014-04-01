@@ -2,9 +2,9 @@
 \alias{qqnorm.RV}
 \title{Normal quantile plot for RVs to answer the question how close to normal it is}
 \usage{
-  \method{qqnorm}{RV} (y, ..., pch = 16, cex = 0.5,
-    add = FALSE, xlab = "Normal Quantiles",
-    ylab = "Random Variable Quantiles")
+\method{qqnorm}{RV}(y, ..., pch = 16, cex = 0.5, add = FALSE,
+  xlab = "Normal Quantiles", ylab = "Random Variable Quantiles",
+  tol = 1e-10)
 }
 \arguments{
   \item{y}{A random variable}
@@ -26,13 +26,15 @@
   \item{xlab}{Label for the X axis}
 
   \item{ylab}{Label for the Y axis}
+
+  \item{tol}{tolerance for the zero probability case}
 }
 \description{
-  Normal quantile plot for RVs to answer the question how
-  close to normal it is
+Normal quantile plot for RVs to answer the question how
+close to normal it is
 }
 \examples{
-fair.die <- make.RV(1:6, rep("1/6",6))
+fair.die <- make.RV(1:6, rep(1/6,6))
 qqnorm(fair.die)
 }
 
