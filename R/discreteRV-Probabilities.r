@@ -1,18 +1,18 @@
 exploreOutcomes <- function(outcomes, probs) {
     final.outcomes <- NULL
     
-    if (!is.finite(outcomes[1]) & !is.finite(outcomes[2])) {
+    if (!is.finite(outcomes[1]) && !is.finite(outcomes[2])) {
         curr <- 0
         out <- NULL
         
-        while (probs(curr) > 0) {
+        while (probs(curr) > .Machine$double.eps^0.5) {
             out <- c(out, curr)
             curr <- curr + 1
         }
         
         curr <- -1
         
-        while (probs(curr) > 0) {
+        while (probs(curr) > .Machine$double.eps^0.5) {
             out <- c(out, curr)
             curr <- curr - 1
         }
@@ -22,7 +22,7 @@ exploreOutcomes <- function(outcomes, probs) {
         curr <- outcomes[1]
         out <- NULL
         
-        while (probs(curr) > 0) {
+        while (probs(curr) > .Machine$double.eps^0.5) {
             out <- c(out, curr)
             curr <- curr + 1
         }
@@ -32,7 +32,7 @@ exploreOutcomes <- function(outcomes, probs) {
         curr <- outcomes[2]
         out <- NULL
         
-        while (probs(curr) > 0) {
+        while (probs(curr) > .Machine$double.eps^0.5) {
             out <- c(out, curr)
             curr <- curr - 1
         }
@@ -54,6 +54,7 @@ exploreOutcomes <- function(outcomes, probs) {
 #' @param odds vector of odds
 #' @param fractions If TRUE, return the probabilities as fractions when printing
 #' @param range If TRUE, outcomes specify a range of values in the form c(lower, upper)
+#' @param verifyprobs If TRUE, verify that the probs sum to one
 #' @return random variable as RV object.
 #' @export
 #' @examples
@@ -75,7 +76,7 @@ exploreOutcomes <- function(outcomes, probs) {
 #' # Make a Poisson random variable
 #' pois.func <- function(x, lambda = 5) { lambda^x * exp(-lambda) / factorial(x) }
 #' X.pois <- make.RV(c(0, Inf), pois.func)
-make.RV <- function(outcomes, probs = NULL, odds = NULL, fractions = (class(probs) != "function"), range = any(is.infinite(outcomes))) {
+make.RV <- function(outcomes, probs = NULL, odds = NULL, fractions = (class(probs) != "function"), range = any(is.infinite(outcomes)), verifyprobs = TRUE) {
     
     test <- fractions # TODO: Fix
     if (range) outcomes <- suppressWarnings(exploreOutcomes(outcomes, probs))
@@ -86,7 +87,7 @@ make.RV <- function(outcomes, probs = NULL, odds = NULL, fractions = (class(prob
     
     probsSum <- sum(pr)
     
-    if (probsSum > 1 & is.null(odds)) stop("Probabilities sum to over 1")
+    if ((probsSum > (1 + .Machine$double.eps^0.5)) && is.null(odds) && verifyprobs) stop("Probabilities sum to over 1")
     if (any(pr < 0)) stop("Probabilities cannot be negative")
     
     isOdds <- !is.null(odds)
@@ -98,7 +99,7 @@ make.RV <- function(outcomes, probs = NULL, odds = NULL, fractions = (class(prob
     }
     
     ## Convert to probs
-    probs <- pr / sum(pr)
+    if (verifyprobs) probs <- pr / sum(pr)
     names(probs) <- outcomes
     
     class(outcomes) <- "RV"
@@ -109,29 +110,15 @@ make.RV <- function(outcomes, probs = NULL, odds = NULL, fractions = (class(prob
     attr(outcomes, "range") <- range
 
     return(outcomes)
-} 
-
-conditional <- function(XY, sep = ",") {    
-    cond.vec <- eval(parse(text = paste("margins(", substitute(XY), ")$'2'", sep = "")))
-    
-    marginal.dist <- margins(XY)$'2'[cond.vec]
-        
-    distns <- lapply(1:length(marginal.dist), function(y) {
-        sub <- XY[grep(paste(",", marginal.dist[y], sep = ""), XY)]
-        pr <- sapply(names(sub), function(pstr) eval(parse(text=pstr)))
-        probs.sub <- pr / sum(pr)
-        
-        make.RV(sub, probs.sub, fractions = TRUE)
-    })
-    
-    return(distns)
 }
 
 unopset <- function(X, Xchar, cond, x) {
+    if (is.character(x)) x <- paste("\"", x, "\"", sep = "")
+    
     X.notrv <- X
     class(X.notrv) <- NULL
     
-    result <- eval(parse(text = paste("X.notrv", cond, x)))
+    result <- eval(parse(text = paste("X.notrv", cond, "c(", paste(x, collapse = ","), ")")))
     class(result) <- "RVresult"
     
     attr(result, "outcomes") <- as.vector(X)
@@ -164,6 +151,21 @@ binopset <- function(X, Xchar, cond, Y) {
 ">=.RV" <- function(X, x) { return(unopset(X, deparse(substitute(X)), ">=", x)) }
 #' @export
 ">.RV" <- function(X, x) { return(unopset(X, deparse(substitute(X)), ">", x)) }
+
+
+#' Generic method for in operator function
+#' 
+#' @name %in%
+#' @param e1 First vector
+#' @param e2 Second vector
+#' @return A logical vector indicating which elements of e1 are in e2
+#' @export
+"%in%" <- function(e1, e2) { UseMethod("%in%") } 
+
+#' @export
+"%in%.default" <- function(e1, e2) { base::`%in%`(e1, e2) }
+#' @export
+"%in%.RV" <- function(e1, e2) { return(unopset(e1, deparse(substitute(e1)), "%in%", e2)) }
 
 #' Compute the logical OR of two events
 #' 
@@ -227,6 +229,26 @@ binopset <- function(X, Xchar, cond, Y) {
     names(vec) <- attr(x, "outcomes")
     
     return(print.default(vec, ...))
+}
+
+#' Outcomes of random variable X 
+#'
+#' Obtain the list of outcomes from a random variable
+#'
+#' @param X random variable
+#' @return vector of outcomes of X
+#' @export
+#' @examples
+#' X.Bern <- make.RV(c(1,0), c(.5,.5))
+#' outcomes(X.Bern)
+#' 
+#' X.fair.die <- make.RV(1:6, rep(1/6,6))
+#' outcomes(X.fair.die)
+#' 
+#' X.loaded.die <- make.RV(1:6, odds = c(1,1,1,1,2,4))
+#' outcomes(X.loaded.die)
+outcomes <- function(X) {
+    return(as.vector(X))
 }
 
 #' Probability mass function of random variable X 
