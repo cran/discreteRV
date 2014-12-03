@@ -79,6 +79,8 @@ exploreOutcomes <- function(outcomes, probs) {
 make.RV <- function(outcomes, probs = NULL, odds = NULL, fractions = (class(probs) != "function"), range = any(is.infinite(outcomes)), verifyprobs = TRUE) {
     
     test <- fractions # TODO: Fix
+    old.out <- outcomes
+    
     if (range) outcomes <- suppressWarnings(exploreOutcomes(outcomes, probs))
     if (class(probs) == "function") probs <- suppressWarnings(probs(outcomes))
     
@@ -108,11 +110,13 @@ make.RV <- function(outcomes, probs = NULL, odds = NULL, fractions = (class(prob
     attr(outcomes, "odds") <- isOdds
     attr(outcomes, "fractions") <- fractions
     attr(outcomes, "range") <- range
+    attr(outcomes, "outcomes") <- old.out
 
     return(outcomes)
 }
 
 unopset <- function(X, Xchar, cond, x) {
+    if (class(x) == "RV") stop("Operations involving two random variables not supported")
     if (is.character(x)) x <- paste("\"", x, "\"", sep = "")
     
     X.notrv <- X
@@ -129,6 +133,8 @@ unopset <- function(X, Xchar, cond, x) {
 }
 
 binopset <- function(X, Xchar, cond, Y) {
+    if (attr(X, "rv") != attr(Y, "rv")) stop("Operations involving two random variables not supported")
+    
     result <- eval(parse(text = paste("as.logical(X)", cond, "as.logical(Y)")))
     class(result) <- "RVresult"
     
@@ -541,9 +547,17 @@ print.RV <- function(x, odds = attr(x, "odds"), fractions = attr(x, "fractions")
     df <- eval(parse(text = paste("data.frame(Outcomes = as.character(x), ", type, " = vec)", sep = "")))
     names(df)[2] <- paste(type, paste(rep(" ", nchar("Outcomes") - nchar(type) - 1), collapse = ""))
     
+    df$test <- type.convert(as.character(df$Outcomes), as.is = TRUE)
+    if (is.numeric(df$test)) df <- df[with(df, order(test)), ]
+    df$test <- NULL
+    
     old.df <- df
     
-    cat(paste("Random variable with", length(x), "outcomes\n\n"))
+    if (attr(x, "range")) {
+        cat(paste("Random variable with outcomes from", attr(x, "outcomes")[1], "to", attr(x, "outcomes")[2], "\n\n"))
+    } else {
+        cat(paste("Random variable with", length(x), "outcomes\n\n"))
+    }
     
     if (nrow(df) > 12 & !all.outcomes) df <- df[1:12,]
     write.table(format(t(df), justify = "right", ...), col.names = FALSE, quote = FALSE)
@@ -582,6 +596,7 @@ qqnorm.RV <- function(y, ..., pch=16, cex=.5, add=FALSE, xlab="Normal Quantiles"
 #'
 #' Extracts the marginal probability mass functions from a joint distribution.
 #' @author Heike Hofmann \email{hofmann@@iastate.edu}
+#' @importFrom plyr alply
 #' @param X a random variable
 #' @param sep parameter specifying the separator between dimensions, defaults to ","
 #' @export
@@ -592,7 +607,6 @@ qqnorm.RV <- function(y, ..., pch=16, cex=.5, add=FALSE, xlab="Normal Quantiles"
 margins <- function(X, sep=",") {
     dframe <- sapply(strsplit(as.character(X), split=sep, fixed=TRUE), function(x) as.matrix(x))
     
-    require(plyr)
     res <- alply(dframe, .margins=1, function(x) {
         dtab <- xtabs(probs(X)~x)
         make.RV(names(dtab), as.numeric(dtab))
