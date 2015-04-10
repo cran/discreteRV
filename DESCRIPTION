@@ -1,16 +1,28 @@
 Package: discreteRV
-Maintainer: Eric Hare <erichare@iastate.edu>
-Author: Andreas Buja
-Version: 1.1.4
-Date: 2015-02-02
-License: GPL-3
-Title: Functions to Create and Manipulate Discrete Random Variables
-Description: discreteRV implements a set of functions that allow computations
-    involving discrete random variables.  It uses a syntax which is familiar to
-    that which is used in mathematical statistics and probability courses.
+Title: Create and Manipulate Discrete Random Variables
+Version: 1.2
+Authors@R: c(
+    person("Andreas", "Buja", email = "buja.at.wharton@gmail.com", role = "aut"),
+    person("Eric", "Hare", email = "erichare@iastate.edu", role = c("aut", "cre")),
+    person("Heike", "Hofmann", email = "hofmann@iastate.edu", role = "aut"))
+Description: Create, manipulate, transform, and simulate from discrete random
+    variables. The syntax is modeled after that which is used in mathematical
+    statistics and probability courses, but with powerful support more advanced
+    probability calculations. This includes the creation of joint random
+    variables, and the derivation and manipulation of their conditional and
+    marginal distributions.
+URL: https://github.com/erichare/discreteRV
+BugReports: https://github.com/erichare/discreteRV/issues
+Depends: R (>= 3.0.2)
 Imports: plyr, MASS
 Suggests: testthat, roxygen2
-Packaged: 2015-02-03 00:34:46 UTC; erichare
+License: GPL-3
+LazyData: true
+Packaged: 2015-04-10 20:40:33 UTC; erichare
+Author: Andreas Buja [aut],
+  Eric Hare [aut, cre],
+  Heike Hofmann [aut]
+Maintainer: Eric Hare <erichare@iastate.edu>
 NeedsCompilation: no
 Repository: CRAN
-Date/Publication: 2015-02-03 06:38:33
+Date/Publication: 2015-04-11 00:44:56
