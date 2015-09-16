@@ -1,11 +1,11 @@
-382533ec40065d173da95136e9d068a0 *DESCRIPTION
-b409353959a377ab3c370c41af1ecd27 *NAMESPACE
-94b7250011e1d1ced1a297a9eeeb534f *R/discreteRV-Probabilities.r
-01f0932c8788d39fe86bbda98e68eae5 *R/discreteRV-Simulations.r
-228caa6a811472b5222d4e6a5d0ab533 *build/vignette.rds
+e86f69cee2d72dd03d05656aac910045 *DESCRIPTION
+f1e6f44815bcd53d1c27df7e4f96a010 *NAMESPACE
+f045c43ca0a4c43b782f4eaaabc3bb00 *R/discreteRV-Probabilities.r
+247942edcd26bfcad4b1f756e52d835b *R/discreteRV-Simulations.r
+38e284d4db458978def3cbb88294cbc5 *build/vignette.rds
 3408c53fbd41e7d0878bb6f0fb9dbe1b *inst/doc/discreteRV.R
 eaf0dd99dad997c8d1dc9030f813b0ff *inst/doc/discreteRV.Rmd
-d1a74b85322e7731bc2a940c764ea590 *inst/doc/discreteRV.html
+e3d0c1f091740f0b2bd0be65124343a6 *inst/doc/discreteRV.html
 64f79ffe6987af53de02cae17ce156db *man/E.Rd
 6e8b50d02d3fe2263bcf9af33eb37583 *man/KURT.Rd
 6e02fdc2ae5ba5870896d8ea40a29b17 *man/P.Rd

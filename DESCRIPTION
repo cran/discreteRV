@@ -1,6 +1,6 @@
 Package: discreteRV
 Title: Create and Manipulate Discrete Random Variables
-Version: 1.2.1
+Version: 1.2.2
 Authors@R: c(
     person("Andreas", "Buja", email = "buja.at.wharton@gmail.com", role = "aut"),
     person("Eric", "Hare", email = "erichare@iastate.edu", role = c("aut", "cre")),
@@ -20,10 +20,10 @@ License: GPL-3
 LazyData: true
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2015-05-03 18:52:20 UTC; erichare
+Packaged: 2015-09-15 18:19:32 UTC; erichare
 Author: Andreas Buja [aut],
   Eric Hare [aut, cre],
   Heike Hofmann [aut]
 Maintainer: Eric Hare <erichare@iastate.edu>
 Repository: CRAN
-Date/Publication: 2015-05-04 01:13:47
+Date/Publication: 2015-09-16 10:05:21
